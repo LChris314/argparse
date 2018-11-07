@@ -13,29 +13,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct ArgparseOpt {
-    ArgparseType type;
-    char short_opt;
-    char *long_opt;
-    const char *begin;
-    size_t val_strlen;
-    union {
-        intmax_t int_val;
-        double float_val;
-    };
-    int count, argv_index;
-} ArgparseOpt;
-
-struct Argparser {
-    char *prog_name;
-    size_t num_opts, opts_capacity, num_pos_args, pos_args_capacity;
-    intmax_t max_pos_args;
-    int *pos_args;
-    ArgparseOpt *opts;
-};
-
-size_t Argparser_size() { return sizeof(Argparser); }
-
 int Argparser_init(Argparser *const parser, const char *const prog_name,
                    const intmax_t max_pos_args) {
     memset(parser, 0, sizeof *parser);
@@ -225,7 +202,6 @@ static int Argparser_recv_short_opt(Argparser *const parser, const int argc,
 static int Argparser_recv_long_opt(Argparser *const parser, const int argc,
                                    const char *const *const argv,
                                    int *const argv_index) {
-    const size_t opt_strlen = strlen(argv[*argv_index]);
     char *opt_name = NULL;
     int has_equal_sign = 0;
     size_t i;
@@ -267,7 +243,7 @@ static int Argparser_recv_long_opt(Argparser *const parser, const int argc,
         if (has_equal_sign) {
             /* Value is after the equal sign */
             ++i;
-            val_strlen = opt_strlen - i;
+            val_strlen = strlen(argv[*argv_index]) - i;
             begin = argv[*argv_index] + i;
         }
         /* Increment the index to look for the argument */

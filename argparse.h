@@ -28,10 +28,26 @@ typedef enum ArgparseType {
     ARG_BOOL
 } ArgparseType;
 
-struct Argparser;
-typedef struct Argparser Argparser;
+typedef struct ArgparseOpt {
+    ArgparseType type;
+    char short_opt;
+    char *long_opt;
+    const char *begin;
+    size_t val_strlen;
+    int count, argv_index;
+    union {
+        intmax_t int_val;
+        double float_val;
+    };
+} ArgparseOpt;
 
-size_t Argparser_size();
+typedef struct Argparser {
+    char *prog_name;
+    size_t num_opts, opts_capacity, num_pos_args, pos_args_capacity;
+    intmax_t max_pos_args;
+    int *pos_args;
+    ArgparseOpt *opts;
+} Argparser;
 
 int Argparser_init(Argparser *const parser, const char *const prog_name,
                    const intmax_t max_pos_args);
