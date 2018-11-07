@@ -360,8 +360,10 @@ intmax_t Argparser_int_result(const Argparser *const parser,
                               const char short_opt, const char *const long_opt,
                               int *const count) {
     ArgparseArg *arg;
-    if (!(arg = Argparser_get_arg_ptr(parser, short_opt, long_opt)))
+    if (!(arg = Argparser_get_arg_ptr(parser, short_opt, long_opt))) {
         *count = RESULT_NOT_FOUND;
+        return 0;
+    }
     *count = arg->count;
     return arg->int_val;
 }
@@ -370,8 +372,10 @@ double Argparser_float_result(const Argparser *const parser,
                               const char short_opt, const char *const long_opt,
                               int *const count) {
     ArgparseArg *arg;
-    if (!(arg = Argparser_get_arg_ptr(parser, short_opt, long_opt)))
+    if (!(arg = Argparser_get_arg_ptr(parser, short_opt, long_opt))) {
         *count = RESULT_NOT_FOUND;
+        return 0;
+    }
     *count = arg->count;
     return arg->float_val;
 }
