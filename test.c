@@ -8,6 +8,7 @@
 ##############################################################################*/
 
 #include "argparse.h"
+#include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,6 +34,9 @@ int main(int argc, char const *argv[]) {
     printf("Option '--name' specified %d times, last value is '%s'.\n", count,
            name ? name : "(null)");
     free(name);
+    const intmax_t lag = Argparser_int_result(parser, '\0', "lag", &count);
+    printf("Option '--lag' specified %d times, last value is '%" PRIiMAX "'.\n",
+           count, lag);
 
     const size_t num_pos_args = Argparser_num_pos_args(parser);
     for (size_t i = 0; i < num_pos_args; ++i) {

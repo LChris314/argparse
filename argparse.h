@@ -30,6 +30,10 @@ typedef enum ArgparseType {
 
 enum { RESULT_NOT_FOUND = -1, RESULT_ALLOC_FAILURE = -2 };
 
+typedef struct ArgparseArgInfo {
+    /* data */
+} ArgparseArgInfo;
+
 struct Argparser;
 typedef struct Argparser Argparser;
 
