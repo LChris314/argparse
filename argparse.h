@@ -10,6 +10,10 @@
 #ifndef ARGPARSE_H_8F131CC184D441DB9BD6BC9B3A943CD9
 #define ARGPARSE_H_8F131CC184D441DB9BD6BC9B3A943CD9
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stddef.h>
 #include <stdint.h>
 
@@ -57,5 +61,9 @@ int Argparser_bool_result(const Argparser *const parser, const char short_opt,
 size_t Argparser_num_pos_args(const Argparser *const parser);
 
 char *Argparser_get_pos_arg(const Argparser *const parser, const size_t pos);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ARGPARSE_H_8F131CC184D441DB9BD6BC9B3A943CD9 */
