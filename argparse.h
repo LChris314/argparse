@@ -28,11 +28,6 @@ typedef enum ArgparseType {
     ARG_BOOL
 } ArgparseType;
 
-typedef struct ArgparseArgInfo {
-    int count, argv_index;
-    char *begin, *end;
-} ArgparseArgInfo;
-
 struct Argparser;
 typedef struct Argparser Argparser;
 
