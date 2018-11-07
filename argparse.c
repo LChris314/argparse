@@ -322,6 +322,16 @@ int Argparser_parse(Argparser *const parser, const int argc,
     return 0;
 }
 
+#define ASSIGN_INFO(_opt, _begin, _len, _argv_index)                           \
+    do {                                                                       \
+        if (_begin)                                                            \
+            *_begin = _opt->begin;                                             \
+        if (_len)                                                              \
+            *_len = _opt->val_strlen;                                          \
+        if (_argv_index)                                                       \
+            *_argv_index = _opt->argv_index;                                   \
+    } while (0)
+
 intmax_t Argparser_int_result(const Argparser *const parser,
                               const char short_opt, const char *const long_opt,
                               int *const count, const char **const begin,
@@ -331,12 +341,7 @@ intmax_t Argparser_int_result(const Argparser *const parser,
         *count = -1;
         return 0;
     }
-    if (begin)
-        *begin = opt->begin;
-    if (len)
-        *len = opt->val_strlen;
-    if (argv_index)
-        *argv_index = opt->argv_index;
+    ASSIGN_INFO(opt, begin, len, argv_index);
     if (count)
         *count = opt->count;
     return opt->int_val;
@@ -351,12 +356,7 @@ double Argparser_float_result(const Argparser *const parser,
         *count = -1;
         return 0;
     }
-    if (begin)
-        *begin = opt->begin;
-    if (len)
-        *len = opt->val_strlen;
-    if (argv_index)
-        *argv_index = opt->argv_index;
+    ASSIGN_INFO(opt, begin, len, argv_index);
     if (count)
         *count = opt->count;
     return opt->float_val;
@@ -371,12 +371,7 @@ int Argparser_str_result(const Argparser *const parser, const char short_opt,
     if (opt->count == 0)
         return 0;
 
-    if (begin)
-        *begin = opt->begin;
-    if (len)
-        *len = opt->val_strlen;
-    if (argv_index)
-        *argv_index = opt->argv_index;
+    ASSIGN_INFO(opt, begin, len, argv_index);
     return opt->count;
 }
 

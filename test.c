@@ -18,7 +18,7 @@ int main(int argc, char const *argv[]) {
 
     Argparser *parser = malloc(Argparser_size());
     Argparser_init(parser, argc >= 1 ? argv[0] : "argparse", 3);
-    Argparser_add_argument(parser, '\0', "lag", ARG_INT);
+    Argparser_add_argument(parser, 'l', "lag", ARG_INT);
     Argparser_add_argument(parser, 'v', "verbose", ARG_BOOL);
     Argparser_add_argument(parser, 'n', "name", ARG_STR);
 
