@@ -28,8 +28,6 @@ typedef enum ArgparseType {
     ARG_BOOL
 } ArgparseType;
 
-enum { RESULT_NOT_FOUND = -1, RESULT_ALLOC_FAILURE = -2 };
-
 typedef struct ArgparseArgInfo {
     int count, argv_index;
     char *begin, *end;
@@ -53,14 +51,17 @@ int Argparser_parse(Argparser *const parser, const int argc,
 
 intmax_t Argparser_int_result(const Argparser *const parser,
                               const char short_opt, const char *const long_opt,
-                              int *const count);
+                              int *const count, const char **const begin,
+                              size_t *const len, int *const argv_index);
 
 double Argparser_float_result(const Argparser *const parser,
                               const char short_opt, const char *const long_opt,
-                              int *const count);
+                              int *const count, const char **const begin,
+                              size_t *const len, int *const argv_index);
 
-char *Argparser_str_result(const Argparser *const parser, const char short_opt,
-                           const char *const long_opt, int *const count);
+int Argparser_str_result(const Argparser *const parser, const char short_opt,
+                         const char *const long_opt, const char **const begin,
+                         size_t *const len, int *const argv_index);
 
 int Argparser_bool_result(const Argparser *const parser, const char short_opt,
                           const char *const long_opt);

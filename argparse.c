@@ -22,7 +22,6 @@ typedef struct ArgparseOpt {
     union {
         intmax_t int_val;
         double float_val;
-        char *str_val;
     };
     int count, argv_index;
 } ArgparseOpt;
@@ -61,11 +60,7 @@ int Argparser_init(Argparser *const parser, const char *const prog_name,
     return 0;
 }
 
-static void ArgparseOpt_deinit(ArgparseOpt *const opt) {
-    free(opt->long_opt);
-    if (opt->type == ARG_STR)
-        free(opt->str_val);
-}
+static void ArgparseOpt_deinit(ArgparseOpt *const opt) { free(opt->long_opt); }
 
 void Argparser_deinit(Argparser *const parser) {
     free(parser->prog_name);
@@ -186,14 +181,6 @@ static int Argparser_handle_opt(Argparser *const parser, ArgparseOpt *const opt,
         return 0;
     }
     case ARG_STR: {
-        char *new_str_val;
-        if (!(new_str_val = realloc(opt->str_val, val_strlen + 1))) {
-            fprintf(stderr, "%s: allocation failed in function %s, line %d\n",
-                    parser->prog_name, __func__, __LINE__);
-            return 1;
-        }
-        opt->str_val = new_str_val;
-        strncpy(opt->str_val, val, val_strlen + 1);
         return 0;
     }
     default:
@@ -208,7 +195,6 @@ static int Argparser_recv_short_opt(Argparser *const parser, const int argc,
                                     int *const argv_index, const size_t i) {
     const char short_opt = argv[*argv_index][i];
     const int is_last_char = argv[*argv_index][i + 1] == '\0';
-    char *val = NULL;
     ArgparseOpt *opt;
     if (!(opt = Argparser_get_opt_ptr(parser, short_opt, NULL))) {
         fprintf(stderr, "%s: unknown option '-%c'\n", parser->prog_name,
@@ -228,35 +214,21 @@ static int Argparser_recv_short_opt(Argparser *const parser, const int argc,
 
     const size_t val_strlen = is_last_char ? strlen(argv[++*argv_index])
                                            : strlen(argv[*argv_index]) - i - 1;
-    if (!(val = malloc(val_strlen + 1)))
-        goto Argparser_recv_short_opt_fail_alloc;
     const char *begin = argv[*argv_index] + (is_last_char ? 0 : i + 1);
-    strncpy(val, begin, val_strlen + 1);
-    if (Argparser_handle_opt(parser, opt, val, val_strlen, 0))
-        goto Argparser_recv_short_opt_fail;
+    if (Argparser_handle_opt(parser, opt, begin, val_strlen, 0))
+        return 1;
     opt->argv_index = *argv_index;
     opt->begin = begin;
     opt->val_strlen = val_strlen;
     ++opt->count;
-
-    free(val);
     return 0;
-
-Argparser_recv_short_opt_fail_alloc:
-    fprintf(stderr, "%s: allocation failed in function %s, line %d\n",
-            parser->prog_name, __func__, __LINE__);
-    goto Argparser_recv_short_opt_fail;
-
-Argparser_recv_short_opt_fail:
-    free(val);
-    return 1;
 }
 
 static int Argparser_recv_long_opt(Argparser *const parser, const int argc,
                                    const char *const *const argv,
                                    int *const argv_index) {
     const size_t opt_strlen = strlen(argv[*argv_index]);
-    char *opt_name = NULL, *val = NULL;
+    char *opt_name = NULL;
     int has_equal_sign = 0;
     size_t i;
     for (i = 2;; ++i) {
@@ -295,13 +267,10 @@ static int Argparser_recv_long_opt(Argparser *const parser, const int argc,
         }
     } else {
         if (has_equal_sign) {
-            /* Copy everything after the equal sign */
+            /* Value is after the equal sign */
             ++i;
             val_strlen = opt_strlen - i;
             begin = argv[*argv_index] + i;
-            if (!(val = malloc(val_strlen + 1)))
-                goto Argparser_recv_long_opt_fail_alloc;
-            strncpy(val, begin, val_strlen + 1);
         }
         /* Increment the index to look for the argument */
         else if (++(*argv_index) >= argc) {
@@ -312,19 +281,16 @@ static int Argparser_recv_long_opt(Argparser *const parser, const int argc,
         } else {
             begin = argv[*argv_index];
             val_strlen = strlen(begin);
-            if (!(val = malloc(val_strlen + 1)))
-                goto Argparser_recv_long_opt_fail_alloc;
-            strncpy(val, begin, val_strlen + 1);
         }
 
         /* Handle different argument types */
-        if (Argparser_handle_opt(parser, opt, val, val_strlen, 1))
+        if (Argparser_handle_opt(parser, opt, begin, val_strlen, 1))
             goto Argparser_recv_long_opt_fail;
     }
+    opt->argv_index = *argv_index;
     opt->begin = begin;
     opt->val_strlen = val_strlen;
     ++opt->count;
-    free(val);
     free(opt_name);
     return 0;
 
@@ -334,7 +300,6 @@ Argparser_recv_long_opt_fail_alloc:
     goto Argparser_recv_long_opt_fail;
 
 Argparser_recv_long_opt_fail:
-    free(val);
     free(opt_name);
     return 1;
 }
@@ -361,56 +326,67 @@ int Argparser_parse(Argparser *const parser, const int argc,
 
 intmax_t Argparser_int_result(const Argparser *const parser,
                               const char short_opt, const char *const long_opt,
-                              int *const count) {
+                              int *const count, const char **const begin,
+                              size_t *const len, int *const argv_index) {
     ArgparseOpt *opt;
     if (!(opt = Argparser_get_opt_ptr(parser, short_opt, long_opt))) {
-        *count = RESULT_NOT_FOUND;
+        *count = -1;
         return 0;
     }
-    *count = opt->count;
+    if (begin)
+        *begin = opt->begin;
+    if (len)
+        *len = opt->val_strlen;
+    if (argv_index)
+        *argv_index = opt->argv_index;
+    if (count)
+        *count = opt->count;
     return opt->int_val;
 }
 
 double Argparser_float_result(const Argparser *const parser,
                               const char short_opt, const char *const long_opt,
-                              int *const count) {
+                              int *const count, const char **const begin,
+                              size_t *const len, int *const argv_index) {
     ArgparseOpt *opt;
     if (!(opt = Argparser_get_opt_ptr(parser, short_opt, long_opt))) {
-        *count = RESULT_NOT_FOUND;
+        *count = -1;
         return 0;
     }
-    *count = opt->count;
+    if (begin)
+        *begin = opt->begin;
+    if (len)
+        *len = opt->val_strlen;
+    if (argv_index)
+        *argv_index = opt->argv_index;
+    if (count)
+        *count = opt->count;
     return opt->float_val;
 }
 
-char *Argparser_str_result(const Argparser *const parser, const char short_opt,
-                           const char *const long_opt, int *const count) {
+int Argparser_str_result(const Argparser *const parser, const char short_opt,
+                         const char *const long_opt, const char **const begin,
+                         size_t *const len, int *const argv_index) {
     ArgparseOpt *opt;
-    if (!(opt = Argparser_get_opt_ptr(parser, short_opt, long_opt))) {
-        *count = RESULT_NOT_FOUND;
-        return NULL;
-    }
-    if (opt->count == 0) {
-        *count = 0;
-        return NULL;
-    }
+    if (!(opt = Argparser_get_opt_ptr(parser, short_opt, long_opt)))
+        return -1;
+    if (opt->count == 0)
+        return 0;
 
-    const size_t len = strlen(opt->str_val);
-    char *result;
-    if (!(result = malloc(len + 1))) {
-        *count = RESULT_ALLOC_FAILURE;
-        return NULL;
-    }
-    strncpy(result, opt->str_val, len + 1);
-    *count = opt->count;
-    return result;
+    if (begin)
+        *begin = opt->begin;
+    if (len)
+        *len = opt->val_strlen;
+    if (argv_index)
+        *argv_index = opt->argv_index;
+    return opt->count;
 }
 
 int Argparser_bool_result(const Argparser *const parser, const char short_opt,
                           const char *const long_opt) {
     ArgparseOpt *opt;
     if (!(opt = Argparser_get_opt_ptr(parser, short_opt, long_opt)))
-        return RESULT_NOT_FOUND;
+        return -1;
     return opt->count;
 }
 
