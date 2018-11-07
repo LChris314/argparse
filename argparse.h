@@ -67,8 +67,8 @@ int Argparser_bool_result(const Argparser *const parser, const char short_opt,
 
 size_t Argparser_num_pos_args(const Argparser *const parser);
 
-char *Argparser_get_pos_arg(const Argparser *const parser, const size_t pos,
-                            int *const argv_index);
+int Argparser_get_pos_arg(const Argparser *const parser, const size_t pos,
+                          int *const argv_index);
 
 #ifdef __cplusplus
 }

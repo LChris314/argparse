@@ -41,10 +41,9 @@ int main(int argc, char const *argv[]) {
     const size_t num_pos_args = Argparser_num_pos_args(parser);
     for (size_t i = 0; i < num_pos_args; ++i) {
         int argv_index = -1;
-        char *pos_arg = Argparser_get_pos_arg(parser, i, &argv_index);
-        printf("Positional argument #%zu is '%s' at index %d.\n", i, pos_arg,
-               argv_index);
-        free(pos_arg);
+        if (!Argparser_get_pos_arg(parser, i, &argv_index))
+            printf("Positional argument #%zu is '%s' at index %d.\n", i,
+                   argv[argv_index], argv_index);
     }
 
 main_exit:

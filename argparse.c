@@ -27,16 +27,11 @@ typedef struct ArgparseOpt {
     int count, argv_index;
 } ArgparseOpt;
 
-typedef struct ArgparsePosArg {
-    char *val;
-    int argv_index;
-} ArgparsePosArg;
-
 struct Argparser {
     char *prog_name;
     size_t num_opts, opts_capacity, num_pos_args, pos_args_capacity;
     intmax_t max_pos_args;
-    ArgparsePosArg *pos_args;
+    int *pos_args;
     ArgparseOpt *opts;
 };
 
@@ -74,11 +69,7 @@ static void ArgparseOpt_deinit(ArgparseOpt *const opt) {
 
 void Argparser_deinit(Argparser *const parser) {
     free(parser->prog_name);
-
-    for (size_t i = 0; i < parser->num_pos_args; ++i)
-        free(parser->pos_args[i].val);
     free(parser->pos_args);
-
     for (size_t i = 0; i < parser->num_opts; ++i)
         ArgparseOpt_deinit(parser->opts + i);
     free(parser->opts);
@@ -129,8 +120,6 @@ static ArgparseOpt *Argparser_get_opt_ptr(const Argparser *const parser,
 
 /* Process a positional argument */
 static int Argparser_recv_pos_arg(Argparser *const parser,
-                                  const char *const val,
-                                  const size_t val_strlen,
                                   const int argv_index) {
     /* Too many positional arguments */
     if (0 <= parser->max_pos_args &&
@@ -143,7 +132,7 @@ static int Argparser_recv_pos_arg(Argparser *const parser,
 
     /* Grow the pos_args array if needed */
     if (parser->num_pos_args >= parser->pos_args_capacity) {
-        ArgparsePosArg *new_pos_args;
+        int *new_pos_args;
         parser->pos_args_capacity *= 2;
         if (0 <= parser->max_pos_args &&
             parser->max_pos_args < (intmax_t)parser->pos_args_capacity)
@@ -151,23 +140,15 @@ static int Argparser_recv_pos_arg(Argparser *const parser,
         if (!(new_pos_args =
                   realloc(parser->pos_args, parser->pos_args_capacity *
                                                 sizeof *parser->pos_args))) {
-            goto Argparser_recv_pos_arg_fail_alloc;
+            fprintf(stderr, "%s: allocation failed in function %s, line %d\n",
+                    parser->prog_name, __func__, __LINE__);
+            return 1;
         }
         parser->pos_args = new_pos_args;
     }
 
-    ArgparsePosArg *arg = parser->pos_args + parser->num_pos_args;
-    if (!(arg->val = malloc(val_strlen + 1)))
-        goto Argparser_recv_pos_arg_fail_alloc;
-    strncpy(arg->val, val, val_strlen + 1);
-    arg->argv_index = argv_index;
-    ++parser->num_pos_args;
+    parser->pos_args[parser->num_pos_args++] = argv_index;
     return 0;
-
-Argparser_recv_pos_arg_fail_alloc:
-    fprintf(stderr, "%s: allocation failed in function %s, line %d\n",
-            parser->prog_name, __func__, __LINE__);
-    return 1;
 }
 
 static int Argparser_handle_opt(Argparser *const parser, ArgparseOpt *const opt,
@@ -371,7 +352,7 @@ int Argparser_parse(Argparser *const parser, const int argc,
             else
                 Argparser_recv_short_opt(parser, argc, argv, &i, 1);
         } else {
-            if (Argparser_recv_pos_arg(parser, argv[i], len, i))
+            if (Argparser_recv_pos_arg(parser, i))
                 return 1;
         }
     }
@@ -437,18 +418,11 @@ size_t Argparser_num_pos_args(const Argparser *const parser) {
     return parser->num_pos_args;
 }
 
-char *Argparser_get_pos_arg(const Argparser *const parser, const size_t pos,
-                            int *const argv_index) {
+int Argparser_get_pos_arg(const Argparser *const parser, const size_t pos,
+                          int *const argv_index) {
     if (parser->num_pos_args <= pos)
-        return NULL;
-
-    ArgparsePosArg *arg = parser->pos_args + pos;
-    const size_t len = strlen(arg->val);
-    char *result;
-    if (!(result = malloc(len + 1)))
-        return NULL;
-    strncpy(result, arg->val, len + 1);
+        return 1;
     if (argv_index)
-        *argv_index = arg->argv_index;
-    return result;
+        *argv_index = parser->pos_args[pos];
+    return 0;
 }
