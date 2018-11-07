@@ -13,13 +13,18 @@
 #include <stdlib.h>
 
 int main(int argc, char const *argv[]) {
+    int exit_code = 0;
+
     Argparser *parser = malloc(Argparser_size());
-    Argparser_init(parser, argc >= 1 ? argv[0] : "argparse");
+    Argparser_init(parser, argc >= 1 ? argv[0] : "argparse", 3);
     Argparser_add_argument(parser, '\0', "lag", ARG_INT);
     Argparser_add_argument(parser, 'v', NULL, ARG_BOOL);
     Argparser_add_argument(parser, 'n', "name", ARG_STR);
 
-    Argparser_parse(parser, argc, argv);
+    if (Argparser_parse(parser, argc, argv)) {
+        exit_code = 1;
+        goto main_exit;
+    }
 
     printf("Verbosity level: %d\n", Argparser_bool_result(parser, 'v', NULL));
 
@@ -36,7 +41,8 @@ int main(int argc, char const *argv[]) {
         free(pos_arg);
     }
 
+main_exit:
     Argparser_deinit(parser);
     free(parser);
-    return 0;
+    return exit_code;
 }

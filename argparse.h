@@ -35,7 +35,9 @@ typedef struct Argparser Argparser;
 
 size_t Argparser_size();
 
-int Argparser_init(Argparser *const parser, const char *const prog_name);
+int Argparser_init(Argparser *const parser, const char *const prog_name,
+                   const intmax_t max_pos_args);
+
 void Argparser_deinit(Argparser *const parser);
 
 int Argparser_add_argument(Argparser *const parser, const char short_opt,

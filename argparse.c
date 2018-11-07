@@ -28,25 +28,30 @@ typedef struct ArgparseArg {
 struct Argparser {
     char *prog_name;
     size_t num_args, args_capacity, num_pos_args, pos_args_capacity;
+    intmax_t max_pos_args;
     ArgparseArg *args;
     char **pos_args;
 };
 
 size_t Argparser_size() { return sizeof(Argparser); }
 
-int Argparser_init(Argparser *const parser, const char *const prog_name) {
+int Argparser_init(Argparser *const parser, const char *const prog_name,
+                   const intmax_t max_pos_args) {
+    memset(parser, 0, sizeof *parser);
+
     const size_t prog_name_strlen = strlen(prog_name);
     if (!(parser->prog_name = malloc(prog_name_strlen + 1)))
         return 1;
     strncpy(parser->prog_name, prog_name, prog_name_strlen + 1);
 
-    parser->num_args = 0;
     parser->args_capacity = ARGPARSER_INITIAL_CAPACITY;
     if (!(parser->args = malloc(parser->args_capacity * sizeof *parser->args)))
         return 1;
 
-    parser->num_pos_args = 0;
+    parser->max_pos_args = max_pos_args;
     parser->pos_args_capacity = ARGPARSER_INITIAL_CAPACITY;
+    if (0 <= max_pos_args && max_pos_args < (intmax_t)parser->pos_args_capacity)
+        parser->pos_args_capacity = max_pos_args;
     if (!(parser->pos_args =
               malloc(parser->pos_args_capacity * sizeof *parser->pos_args)))
         return 1;
@@ -119,10 +124,22 @@ static ArgparseArg *Argparser_get_arg_ptr(const Argparser *const parser,
 static int Argparser_recv_pos_arg(Argparser *const parser,
                                   const char *const val,
                                   const size_t val_strlen) {
+    /* Too many positional arguments */
+    if (0 <= parser->max_pos_args &&
+        parser->max_pos_args <= (intmax_t)parser->num_pos_args) {
+        fprintf(stderr,
+                "%s: too many positional arguments (at most %" PRIiMAX ")\n",
+                parser->prog_name, parser->max_pos_args);
+        return 1;
+    }
+
     /* Grow the pos_args array if needed */
     if (parser->num_pos_args >= parser->pos_args_capacity) {
         char **new_pos_args;
         parser->pos_args_capacity *= 2;
+        if (0 <= parser->max_pos_args &&
+            parser->max_pos_args < (intmax_t)parser->pos_args_capacity)
+            parser->pos_args_capacity = parser->max_pos_args;
         if (!(new_pos_args =
                   realloc(parser->pos_args, parser->pos_args_capacity *
                                                 sizeof *parser->pos_args))) {
