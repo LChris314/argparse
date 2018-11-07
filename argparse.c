@@ -16,7 +16,9 @@
 typedef struct ArgparseOpt {
     ArgparseType type;
     char short_opt;
-    char *long_opt, *begin, *end;
+    char *long_opt;
+    const char *begin;
+    size_t val_strlen;
     union {
         intmax_t int_val;
         double float_val;
@@ -125,16 +127,16 @@ static ArgparseOpt *Argparser_get_opt_ptr(const Argparser *const parser,
     return NULL;
 }
 
-/* Process a positional optument */
+/* Process a positional argument */
 static int Argparser_recv_pos_arg(Argparser *const parser,
                                   const char *const val,
                                   const size_t val_strlen,
                                   const int argv_index) {
-    /* Too many positional optuments */
+    /* Too many positional arguments */
     if (0 <= parser->max_pos_args &&
         parser->max_pos_args <= (intmax_t)parser->num_pos_args) {
         fprintf(stderr,
-                "%s: too many positional optuments (at most %" PRIiMAX ")\n",
+                "%s: too many positional arguments (at most %" PRIiMAX ")\n",
                 parser->prog_name, parser->max_pos_args);
         return 1;
     }
@@ -183,7 +185,7 @@ static int Argparser_handle_opt(Argparser *const parser, ArgparseOpt *const opt,
         if (endptr == val || (size_t)(endptr - val) != val_strlen) {
             /* No conversion, or val is not consumed fully */
             fprintf(stderr,
-                    "%s: optument '%s' for option '%s%s' is not a valid "
+                    "%s: argument '%s' for option '%s%s' is not a valid "
                     "integer\n",
                     parser->prog_name, val, dashes, opt_str);
             return 1;
@@ -195,7 +197,7 @@ static int Argparser_handle_opt(Argparser *const parser, ArgparseOpt *const opt,
         if (endptr == val || (size_t)(endptr - val) != val_strlen) {
             /* No conversion, or val is not consumed fully */
             fprintf(stderr,
-                    "%s: optument '%s' for option '%s%s' is not a valid "
+                    "%s: argument '%s' for option '%s%s' is not a valid "
                     "floating point number\n",
                     parser->prog_name, val, dashes, opt_str);
             return 1;
@@ -234,8 +236,9 @@ static int Argparser_recv_short_opt(Argparser *const parser, const int argc,
     }
 
     if (opt->type == ARG_BOOL) {
-        /* Option doesn't take an optument */
+        /* Option doesn't take an argument */
         ++opt->count;
+        opt->argv_index = *argv_index;
         if (is_last_char)
             return 0;
         /* Look at the rest of the characters */
@@ -246,10 +249,13 @@ static int Argparser_recv_short_opt(Argparser *const parser, const int argc,
                                            : strlen(argv[*argv_index]) - i - 1;
     if (!(val = malloc(val_strlen + 1)))
         goto Argparser_recv_short_opt_fail_alloc;
-    strncpy(val, argv[*argv_index] + (is_last_char ? 0 : i + 1),
-            val_strlen + 1);
+    const char *begin = argv[*argv_index] + (is_last_char ? 0 : i + 1);
+    strncpy(val, begin, val_strlen + 1);
     if (Argparser_handle_opt(parser, opt, val, val_strlen, 0))
         goto Argparser_recv_short_opt_fail;
+    opt->argv_index = *argv_index;
+    opt->begin = begin;
+    opt->val_strlen = val_strlen;
     ++opt->count;
 
     free(val);
@@ -292,6 +298,8 @@ static int Argparser_recv_long_opt(Argparser *const parser, const int argc,
     }
 
     ArgparseOpt *opt;
+    const char *begin;
+    size_t val_strlen;
     if (!(opt = Argparser_get_opt_ptr(parser, '\0', opt_name))) {
         fprintf(stderr, "%s: unknown option '--%s'\n", parser->prog_name,
                 opt_name);
@@ -300,37 +308,40 @@ static int Argparser_recv_long_opt(Argparser *const parser, const int argc,
 
     if (opt->type == ARG_BOOL) {
         if (has_equal_sign) {
-            fprintf(stderr, "%s: option '--%s' does not take an optument\n",
+            fprintf(stderr, "%s: option '--%s' does not take an argument\n",
                     parser->prog_name, opt_name);
             goto Argparser_recv_long_opt_fail;
         }
     } else {
-        size_t val_strlen;
         if (has_equal_sign) {
             /* Copy everything after the equal sign */
             ++i;
             val_strlen = opt_strlen - i;
+            begin = argv[*argv_index] + i;
             if (!(val = malloc(val_strlen + 1)))
                 goto Argparser_recv_long_opt_fail_alloc;
-            strncpy(val, argv[*argv_index] + i, val_strlen + 1);
+            strncpy(val, begin, val_strlen + 1);
         }
-        /* Increment the index to look for the optument */
+        /* Increment the index to look for the argument */
         else if (++(*argv_index) >= argc) {
-            /* We're missing an optument */
-            fprintf(stderr, "%s: missing optument for option '--%s'\n",
+            /* We're missing an argument */
+            fprintf(stderr, "%s: missing argument for option '--%s'\n",
                     parser->prog_name, opt_name);
             goto Argparser_recv_long_opt_fail;
         } else {
-            val_strlen = strlen(argv[*argv_index]);
+            begin = argv[*argv_index];
+            val_strlen = strlen(begin);
             if (!(val = malloc(val_strlen + 1)))
                 goto Argparser_recv_long_opt_fail_alloc;
-            strncpy(val, argv[*argv_index], val_strlen + 1);
+            strncpy(val, begin, val_strlen + 1);
         }
 
-        /* Handle different optument types */
+        /* Handle different argument types */
         if (Argparser_handle_opt(parser, opt, val, val_strlen, 1))
             goto Argparser_recv_long_opt_fail;
     }
+    opt->begin = begin;
+    opt->val_strlen = val_strlen;
     ++opt->count;
     free(val);
     free(opt_name);
