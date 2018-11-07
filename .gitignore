@@ -1,6 +1,7 @@
 *.o
 *.d
 argparse_test
+argparse_test.exe
 libargparse.a
 
 .vscode/
