@@ -233,10 +233,11 @@ static int Argparser_recv_short_opt(Argparser *const parser, const int argc,
         return Argparser_recv_short_opt(parser, argc, argv, arg_index, i + 1);
     }
 
-    const size_t val_strlen = strlen(argv[*arg_index]) - i - 1;
+    const size_t val_strlen = is_last_char ? strlen(argv[++*arg_index])
+                                           : strlen(argv[*arg_index]) - i - 1;
     if (!(val = malloc(val_strlen + 1)))
         goto Argparser_recv_short_opt_fail_alloc;
-    strncpy(val, argv[*arg_index] + i + 1, val_strlen + 1);
+    strncpy(val, argv[*arg_index] + (is_last_char ? 0 : i + 1), val_strlen + 1);
     if (Argparser_handle_arg(parser, arg, val, val_strlen, 0))
         goto Argparser_recv_short_opt_fail;
     ++arg->count;
