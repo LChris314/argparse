@@ -64,7 +64,7 @@ int Argparser_str_result(const Argparser *const parser, const char short_opt,
                          size_t *const len, int *const argv_index);
 
 int Argparser_bool_result(const Argparser *const parser, const char short_opt,
-                          const char *const long_opt);
+                          const char *const long_opt, int *const argv_index);
 
 size_t Argparser_num_pos_args(const Argparser *const parser);
 

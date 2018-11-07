@@ -149,6 +149,9 @@ static int Argparser_recv_pos_arg(Argparser *const parser,
 static int Argparser_handle_opt(Argparser *const parser, ArgparseOpt *const opt,
                                 const char *const val, const size_t val_strlen,
                                 const int is_long_opt) {
+    if (opt->type == ARG_STR)
+        return 0;
+
     /* For error messages */
     const char *dashes = is_long_opt ? "--" : "-";
     const char short_opt_str[2] = {opt->short_opt, '\0'};
@@ -156,7 +159,7 @@ static int Argparser_handle_opt(Argparser *const parser, ArgparseOpt *const opt,
 
     char *endptr;
     switch (opt->type) {
-    case ARG_INT: {
+    case ARG_INT:
         opt->int_val = strtoimax(val, &endptr, 10);
         if (endptr == val || (size_t)(endptr - val) != val_strlen) {
             /* No conversion, or val is not consumed fully */
@@ -167,8 +170,7 @@ static int Argparser_handle_opt(Argparser *const parser, ArgparseOpt *const opt,
             return 1;
         }
         return 0;
-    }
-    case ARG_FLOAT: {
+    case ARG_FLOAT:
         opt->float_val = strtod(val, &endptr);
         if (endptr == val || (size_t)(endptr - val) != val_strlen) {
             /* No conversion, or val is not consumed fully */
@@ -179,10 +181,6 @@ static int Argparser_handle_opt(Argparser *const parser, ArgparseOpt *const opt,
             return 1;
         }
         return 0;
-    }
-    case ARG_STR: {
-        return 0;
-    }
     default:
         fprintf(stderr, "%s: internal error in function %s, line %d\n",
                 parser->prog_name, __func__, __LINE__);
@@ -251,8 +249,8 @@ static int Argparser_recv_long_opt(Argparser *const parser, const int argc,
     }
 
     ArgparseOpt *opt;
-    const char *begin;
-    size_t val_strlen;
+    const char *begin = NULL;
+    size_t val_strlen = 0;
     if (!(opt = Argparser_get_opt_ptr(parser, '\0', opt_name))) {
         fprintf(stderr, "%s: unknown option '--%s'\n", parser->prog_name,
                 opt_name);
@@ -383,10 +381,12 @@ int Argparser_str_result(const Argparser *const parser, const char short_opt,
 }
 
 int Argparser_bool_result(const Argparser *const parser, const char short_opt,
-                          const char *const long_opt) {
+                          const char *const long_opt, int *const argv_index) {
     ArgparseOpt *opt;
     if (!(opt = Argparser_get_opt_ptr(parser, short_opt, long_opt)))
         return -1;
+    if (argv_index)
+        *argv_index = opt->argv_index;
     return opt->count;
 }
 

@@ -19,7 +19,7 @@ int main(int argc, char const *argv[]) {
     Argparser *parser = malloc(Argparser_size());
     Argparser_init(parser, argc >= 1 ? argv[0] : "argparse", 3);
     Argparser_add_argument(parser, '\0', "lag", ARG_INT);
-    Argparser_add_argument(parser, 'v', NULL, ARG_BOOL);
+    Argparser_add_argument(parser, 'v', "verbose", ARG_BOOL);
     Argparser_add_argument(parser, 'n', "name", ARG_STR);
 
     if (Argparser_parse(parser, argc, argv)) {
@@ -27,9 +27,10 @@ int main(int argc, char const *argv[]) {
         goto main_exit;
     }
 
-    printf("Verbosity level: %d\n", Argparser_bool_result(parser, 'v', NULL));
-
     int argv_index = -1;
+    const int vlevel = Argparser_bool_result(parser, 'v', NULL, &argv_index);
+    printf("Verbosity level: %d, last at index %d\n", vlevel, argv_index);
+
     const char *begin;
     int count =
         Argparser_str_result(parser, '\0', "name", &begin, NULL, &argv_index);
