@@ -1,0 +1,6 @@
+*.o
+*.d
+argparse_test
+libargparse.a
+
+.vscode/
