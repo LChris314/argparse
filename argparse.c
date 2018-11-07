@@ -16,11 +16,7 @@
 int Argparser_init(Argparser *const parser, const char *const prog_name,
                    const intmax_t max_pos_args) {
     memset(parser, 0, sizeof *parser);
-
-    const size_t prog_name_strlen = strlen(prog_name);
-    if (!(parser->prog_name = malloc(prog_name_strlen + 1)))
-        return 1;
-    strncpy(parser->prog_name, prog_name, prog_name_strlen + 1);
+    parser->prog_name = prog_name;
 
     parser->opts_capacity = ARGPARSER_INITIAL_CAPACITY;
     if (!(parser->opts = malloc(parser->opts_capacity * sizeof *parser->opts)))
@@ -40,7 +36,6 @@ int Argparser_init(Argparser *const parser, const char *const prog_name,
 static void ArgparseOpt_deinit(ArgparseOpt *const opt) { free(opt->long_opt); }
 
 void Argparser_deinit(Argparser *const parser) {
-    free(parser->prog_name);
     free(parser->pos_args);
     for (size_t i = 0; i < parser->num_opts; ++i)
         ArgparseOpt_deinit(parser->opts + i);

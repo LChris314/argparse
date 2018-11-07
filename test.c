@@ -25,7 +25,8 @@ int main(int argc, char const *argv[]) {
     Argparser parser = {argv[0],      num_opts,     num_opts, 0,
                         max_pos_args, max_pos_args, pos_args, opts};
 
-    /*Argparser_init(&parser, argc >= 1 ? argv[0] : "argparse", 100);
+    /*Argparser parser;
+    Argparser_init(&parser, argc >= 1 ? argv[0] : "argparse", 100);
     Argparser_add_argument(&parser, 'l', "lag", ARG_INT);
     Argparser_add_argument(&parser, 'v', "verbose", ARG_BOOL);
     Argparser_add_argument(&parser, 'n', "name", ARG_STR);*/

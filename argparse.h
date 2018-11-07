@@ -42,7 +42,7 @@ typedef struct ArgparseOpt {
 } ArgparseOpt;
 
 typedef struct Argparser {
-    char *prog_name;
+    const char *prog_name;
     size_t num_opts, opts_capacity, num_pos_args, pos_args_capacity;
     intmax_t max_pos_args;
     int *pos_args;
