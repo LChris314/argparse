@@ -31,7 +31,8 @@ typedef enum ArgparseType {
 enum { RESULT_NOT_FOUND = -1, RESULT_ALLOC_FAILURE = -2 };
 
 typedef struct ArgparseArgInfo {
-    /* data */
+    int count, argv_index;
+    char *begin, *end;
 } ArgparseArgInfo;
 
 struct Argparser;
@@ -66,7 +67,8 @@ int Argparser_bool_result(const Argparser *const parser, const char short_opt,
 
 size_t Argparser_num_pos_args(const Argparser *const parser);
 
-char *Argparser_get_pos_arg(const Argparser *const parser, const size_t pos);
+char *Argparser_get_pos_arg(const Argparser *const parser, const size_t pos,
+                            int *const argv_index);
 
 #ifdef __cplusplus
 }

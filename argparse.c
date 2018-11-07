@@ -128,7 +128,8 @@ static ArgparseOpt *Argparser_get_opt_ptr(const Argparser *const parser,
 /* Process a positional optument */
 static int Argparser_recv_pos_arg(Argparser *const parser,
                                   const char *const val,
-                                  const size_t val_strlen) {
+                                  const size_t val_strlen,
+                                  const int argv_index) {
     /* Too many positional optuments */
     if (0 <= parser->max_pos_args &&
         parser->max_pos_args <= (intmax_t)parser->num_pos_args) {
@@ -153,9 +154,11 @@ static int Argparser_recv_pos_arg(Argparser *const parser,
         parser->pos_args = new_pos_args;
     }
 
-    if (!(parser->pos_args[parser->num_pos_args].val = malloc(val_strlen + 1)))
+    ArgparsePosArg *arg = parser->pos_args + parser->num_pos_args;
+    if (!(arg->val = malloc(val_strlen + 1)))
         goto Argparser_recv_pos_arg_fail_alloc;
-    strncpy(parser->pos_args[parser->num_pos_args].val, val, val_strlen + 1);
+    strncpy(arg->val, val, val_strlen + 1);
+    arg->argv_index = argv_index;
     ++parser->num_pos_args;
     return 0;
 
@@ -357,7 +360,7 @@ int Argparser_parse(Argparser *const parser, const int argc,
             else
                 Argparser_recv_short_opt(parser, argc, argv, &i, 1);
         } else {
-            if (Argparser_recv_pos_arg(parser, argv[i], len))
+            if (Argparser_recv_pos_arg(parser, argv[i], len, i))
                 return 1;
         }
     }
@@ -423,14 +426,18 @@ size_t Argparser_num_pos_args(const Argparser *const parser) {
     return parser->num_pos_args;
 }
 
-char *Argparser_get_pos_arg(const Argparser *const parser, const size_t pos) {
+char *Argparser_get_pos_arg(const Argparser *const parser, const size_t pos,
+                            int *const argv_index) {
     if (parser->num_pos_args <= pos)
         return NULL;
 
-    const size_t len = strlen(parser->pos_args[pos].val);
+    ArgparsePosArg *arg = parser->pos_args + pos;
+    const size_t len = strlen(arg->val);
     char *result;
     if (!(result = malloc(len + 1)))
         return NULL;
-    strncpy(result, parser->pos_args[pos].val, len + 1);
+    strncpy(result, arg->val, len + 1);
+    if (argv_index)
+        *argv_index = arg->argv_index;
     return result;
 }
