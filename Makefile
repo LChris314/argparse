@@ -14,21 +14,23 @@ AR = ar
 CFLAGS = -MMD -Wall -Wextra -g $(EXTRA_CFLAGS)
 CCLDFLAGS = $(CFLAGS)
 
-_SRCS = argparse test
+NAME = argparse
+
+_SRCS = $(NAME) test
 SRCS = $(addsuffix .c ,$(_SRCS))
 OBJS = $(SRCS:.c=.o)
 DEPS = $(OBJS:.o=.d)
 
-LIB = libargparse.a
-TEST_BIN = argparse_test
+LIB = lib$(NAME).a
+TEST_BIN = $(NAME)_test
 
 all: $(LIB)
 
-$(LIB): argparse.o
+$(LIB): $(NAME).o
 	$(AR) rvs $@ $^
 
-$(TEST_BIN): $(OBJS)
-	$(CC) $(CCLDFLAGS) -o $@ $^
+$(TEST_BIN): test.o $(LIB)
+	$(CC) $(CCLDFLAGS) -L. -o $@ $< -l$(NAME)
 
 $(OBJS): %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
