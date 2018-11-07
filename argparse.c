@@ -15,22 +15,22 @@
 
 typedef struct ArgparseArg {
     char short_opt;
-    char *long_opt;
-    ArgparseType type;
     union {
         intmax_t int_val;
         double float_val;
         char *str_val;
     };
+    ArgparseType type;
     int count;
+    char *long_opt;
 } ArgparseArg;
 
 struct Argparser {
     char *prog_name;
     size_t num_args, args_capacity, num_pos_args, pos_args_capacity;
     intmax_t max_pos_args;
-    ArgparseArg *args;
     char **pos_args;
+    ArgparseArg *args;
 };
 
 size_t Argparser_size() { return sizeof(Argparser); }
