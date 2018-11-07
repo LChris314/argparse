@@ -389,3 +389,19 @@ int Argparser_bool_result(const Argparser *const parser, const char short_opt,
         return RESULT_NOT_FOUND;
     return arg->count;
 }
+
+size_t Argparser_num_pos_args(const Argparser *const parser) {
+    return parser->num_pos_args;
+}
+
+char *Argparser_get_pos_arg(const Argparser *const parser, const size_t pos) {
+    if (parser->num_pos_args <= pos)
+        return NULL;
+
+    const size_t len = strlen(parser->pos_args[pos]);
+    char *result;
+    if (!(result = malloc(len + 1)))
+        return NULL;
+    strncpy(result, parser->pos_args[pos], len + 1);
+    return result;
+}

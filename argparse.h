@@ -54,4 +54,8 @@ char *Argparser_str_result(const Argparser *const parser, const char short_opt,
 int Argparser_bool_result(const Argparser *const parser, const char short_opt,
                           const char *const long_opt);
 
+size_t Argparser_num_pos_args(const Argparser *const parser);
+
+char *Argparser_get_pos_arg(const Argparser *const parser, const size_t pos);
+
 #endif /* ARGPARSE_H_8F131CC184D441DB9BD6BC9B3A943CD9 */
