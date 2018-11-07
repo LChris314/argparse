@@ -107,8 +107,9 @@ static int Argparser_recv_pos_arg(Argparser *const parser,
         if (!(new_pos_args =
                   realloc(parser->pos_args, parser->pos_args_capacity *
                                                 sizeof *parser->pos_args))) {
-            fprintf(stderr, "%s: allocation failed in function %s, line %d\n",
-                    parser->prog_name, __func__, __LINE__);
+            fprintf(stderr,
+                    "%s: allocation failed in function %s, line %d of %s\n",
+                    parser->prog_name, __func__, __LINE__, __FILE__);
             return 1;
         }
         parser->pos_args = new_pos_args;
@@ -154,8 +155,8 @@ static int Argparser_handle_opt(Argparser *const parser, ArgparseOpt *const opt,
         }
         return 0;
     default:
-        fprintf(stderr, "%s: internal error in function %s, line %d\n",
-                parser->prog_name, __func__, __LINE__);
+        fprintf(stderr, "%s: internal error in function %s, line %d of %s\n",
+                parser->prog_name, __func__, __LINE__, __FILE__);
         return 1;
     }
 }
@@ -264,8 +265,8 @@ static int Argparser_recv_long_opt(Argparser *const parser, const int argc,
     return 0;
 
 Argparser_recv_long_opt_fail_alloc:
-    fprintf(stderr, "%s: allocation failed in function %s, line %d\n",
-            parser->prog_name, __func__, __LINE__);
+    fprintf(stderr, "%s: allocation failed in function %s, line %d of %s\n",
+            parser->prog_name, __func__, __LINE__, __FILE__);
     goto Argparser_recv_long_opt_fail;
 
 Argparser_recv_long_opt_fail:
@@ -279,16 +280,15 @@ int Argparser_parse(Argparser *const parser, const int argc,
     for (int i = 1; i < argc; ++i) {
         const size_t len = strlen(argv[i]);
         if (!pos_args_only && len >= 3 && strncmp(argv[i], "--", 2) == 0) {
-            Argparser_recv_long_opt(parser, argc, argv, &i);
+            if (Argparser_recv_long_opt(parser, argc, argv, &i))
+                return 1;
         } else if (!pos_args_only && len >= 2 && argv[i][0] == '-') {
             if (argv[i][1] == '-')
                 pos_args_only = 1;
-            else
-                Argparser_recv_short_opt(parser, argc, argv, &i, 1);
-        } else {
-            if (Argparser_recv_pos_arg(parser, i))
+            else if (Argparser_recv_short_opt(parser, argc, argv, &i, 1))
                 return 1;
-        }
+        } else if (Argparser_recv_pos_arg(parser, i))
+            return 1;
     }
     return 0;
 }
