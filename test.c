@@ -16,14 +16,15 @@
 int main(int argc, char const *argv[]) {
     int exit_code = 0;
 
-    ArgparseOpt opts[3] = {{ARG_INT, 'l', "lag"},
-                           {ARG_BOOL, 'v', "verbose"},
-                           {ARG_STR, 'n', "name"}};
+    ArgparseOpt opts[] = {{'n', "int", ARG_INT},
+                          {'f', "float", ARG_FLOAT},
+                          {'v', "verbose", ARG_BOOL},
+                          {'s', "str", ARG_STR}};
     int pos_args[10] = {0};
     const size_t num_opts = sizeof opts / sizeof opts[0];
     const size_t max_pos_args = sizeof pos_args / sizeof pos_args[0];
-    Argparser parser = {argv[0],      num_opts,     num_opts, 0,
-                        max_pos_args, max_pos_args, pos_args, opts};
+    Argparser parser =
+        Argparser_struct(argv[0], num_opts, opts, max_pos_args, pos_args);
 
     /*Argparser parser;
     Argparser_init(&parser, argc >= 1 ? argv[0] : "argparse", 100);
@@ -42,15 +43,20 @@ int main(int argc, char const *argv[]) {
 
     const char *begin;
     int count =
-        Argparser_str_result(&parser, '\0', "name", &begin, NULL, &argv_index);
+        Argparser_str_result(&parser, 's', "str", &begin, NULL, &argv_index);
     printf(
-        "Option '--name' specified %d times, last value is '%s' at index %d.\n",
+        "Option '--str' specified %d times, last value is '%s' at index %d.\n",
         count, count ? begin : "(null)", argv_index);
-    const intmax_t lag = Argparser_int_result(&parser, '\0', "lag", &count,
-                                              NULL, NULL, &argv_index);
-    printf("Option '--lag' specified %d times, last value is '%" PRIiMAX
+    const intmax_t int_ = Argparser_int_result(&parser, 'n', "int", &count,
+                                               NULL, NULL, &argv_index);
+    printf("Option '--int' specified %d times, last value is '%" PRIiMAX
            "' at index %d.\n",
-           count, lag, argv_index);
+           count, int_, argv_index);
+    const double d = Argparser_float_result(&parser, 'f', "float", &count, NULL,
+                                            NULL, &argv_index);
+    printf("Option '--float' specified %d times, last value is '%f' at index "
+           "%d.\n",
+           count, d, argv_index);
 
     const size_t num_pos_args = Argparser_num_pos_args(&parser);
     for (size_t i = 0; i < num_pos_args; ++i) {

@@ -29,9 +29,9 @@ typedef enum ArgparseType {
 } ArgparseType;
 
 typedef struct ArgparseOpt {
-    ArgparseType type;
     char short_opt;
     char *long_opt;
+    ArgparseType type;
     const char *begin;
     size_t val_strlen;
     int count, argv_index;
@@ -48,6 +48,12 @@ typedef struct Argparser {
     int *pos_args;
     ArgparseOpt *opts;
 } Argparser;
+
+#define Argparser_struct(prog_name, num_opts, opts, max_pos_args, pos_args)    \
+    {                                                                          \
+        prog_name, num_opts, num_opts, 0, max_pos_args, max_pos_args,          \
+            pos_args, opts                                                     \
+    }
 
 int Argparser_init(Argparser *const parser, const char *const prog_name,
                    const intmax_t max_pos_args);
