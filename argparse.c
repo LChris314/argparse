@@ -1,6 +1,6 @@
 /*##############################################################################
 #                                                                              #
-#                        Copyright 2018 TAM, Chun Pang                         #
+#                           Copyright 2018 C. P. Tam                           #
 #                                                                              #
 #       The argparse project is covered by the terms of the MIT License.       #
 #       See the file "LICENSE" for details.                                    #

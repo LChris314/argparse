@@ -1,6 +1,6 @@
 /*##############################################################################
 #                                                                              #
-#                        Copyright 2018 TAM, Chun Pang                         #
+#                           Copyright 2018 C. P. Tam                           #
 #                                                                              #
 #       The argparse project is covered by the terms of the MIT License.       #
 #       See the file "LICENSE" for details.                                    #
@@ -27,10 +27,11 @@ int main(int argc, char const *argv[]) {
         Argparser_struct(argv[0], num_opts, opts, max_pos_args, pos_args);
 
     /*Argparser parser;
-    Argparser_init(&parser, argc >= 1 ? argv[0] : "argparse", 100);
-    Argparser_add_argument(&parser, 'l', "lag", ARG_INT);
+    Argparser_init(&parser, argv[0], -1);
+    Argparser_add_argument(&parser, 'n', "int", ARG_INT);
+    Argparser_add_argument(&parser, 'f', "float", ARG_FLOAT);
     Argparser_add_argument(&parser, 'v', "verbose", ARG_BOOL);
-    Argparser_add_argument(&parser, 'n', "name", ARG_STR);*/
+    Argparser_add_argument(&parser, 's', "str", ARG_STR);*/
 
     if (Argparser_parse(&parser, argc, argv)) {
         exit_code = 1;
