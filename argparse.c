@@ -180,6 +180,7 @@ static int Argparser_recv_short_opt(Argparser *const parser, const int argc,
         /* Option doesn't take an argument */
         ++opt->count;
         opt->argv_index = *argv_index;
+        opt->begin = argv[*argv_index] + i;
         if (is_last_char)
             return 0;
         /* Look at the rest of the characters */
@@ -245,6 +246,7 @@ static int Argparser_recv_long_opt(Argparser *const parser, const int argc,
                     parser->prog_name, opt_name);
             return 1;
         }
+        opt->begin = argv[*argv_index] + 2;
     } else {
         if (has_equal_sign) {
             /* Value is after the equal sign */
@@ -347,10 +349,13 @@ int Argparser_str_result(const Argparser *const parser, const char short_opt,
 }
 
 int Argparser_bool_result(const Argparser *const parser, const char short_opt,
-                          const char *const long_opt, int *const argv_index) {
+                          const char *const long_opt, const char **const begin,
+                          int *const argv_index) {
     ArgparseOpt *opt;
     if (!(opt = Argparser_get_opt_ptr(parser, short_opt, long_opt)))
         return -1;
+    if (begin)
+        *begin = opt->begin;
     if (argv_index)
         *argv_index = opt->argv_index;
     return opt->count;

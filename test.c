@@ -38,11 +38,11 @@ int main(int argc, char const *argv[]) {
         goto main_exit;
     }
 
-    int argv_index = -1;
-    const int vlevel = Argparser_bool_result(&parser, 'v', NULL, &argv_index);
-    printf("Verbosity level: %d, last at index %d\n", vlevel, argv_index);
-
     const char *begin;
+    int argv_index = -1;
+    const int vlevel =
+        Argparser_bool_result(&parser, 'v', NULL, &begin, &argv_index);
+    printf("Verbosity level: %d, last at index %d\n", vlevel, argv_index);
     int count =
         Argparser_str_result(&parser, 's', "str", &begin, NULL, &argv_index);
     printf(
