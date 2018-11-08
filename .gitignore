@@ -5,3 +5,6 @@ argparse_test.exe
 libargparse.a
 
 .vscode/
+
+massif.out.*
+vgcore.*

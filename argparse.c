@@ -198,56 +198,63 @@ static int Argparser_recv_short_opt(Argparser *const parser, const int argc,
 static int Argparser_recv_long_opt(Argparser *const parser, const int argc,
                                    const char *const *const argv,
                                    int *const argv_index) {
-    char *opt_name = NULL;
+    const char *opt_name = argv[*argv_index] + 2;
     int has_equal_sign = 0;
-    size_t i;
-    for (i = 2;; ++i) {
-        switch (argv[*argv_index][i]) {
-        case '=':
+    size_t opt_end_index;
+    for (opt_end_index = 2;; ++opt_end_index) {
+        if (argv[*argv_index][opt_end_index] == '=') {
             has_equal_sign = 1;
             break;
-        case '\0':
+        } else if (argv[*argv_index][opt_end_index] == '\0') {
             has_equal_sign = 0;
             break;
-        default:
-            continue;
         }
-        if (!(opt_name = malloc(i - 2 + 1)))
-            goto Argparser_recv_long_opt_fail_alloc;
-        /* Don't use strncpy because the source may not be NULL-terminated */
-        memcpy(opt_name, argv[*argv_index] + 2, i - 2);
-        opt_name[i - 2] = '\0';
-        break;
     }
 
-    ArgparseOpt *opt;
+    ArgparseOpt *opt = NULL;
+    if (has_equal_sign) {
+        /* opt_name is *not* NULL-terminated */
+        for (size_t j = 0; j < parser->num_opts; ++j) {
+            const char *long_opt = parser->opts[j].long_opt;
+            if (long_opt &&
+                strncmp(long_opt, opt_name, opt_end_index - 2) == 0 &&
+                long_opt[opt_end_index - 2] == '\0') {
+                opt = parser->opts + j;
+                break;
+            }
+        }
+    } else {
+        opt = Argparser_get_opt_ptr(parser, '\0', opt_name);
+    }
+    if (!opt) {
+        fprintf(stderr, "%s: unknown option '--%.*s'\n", parser->prog_name,
+                (int)opt_end_index - 2, opt_name);
+        return 1;
+    }
+    /* opt_name is NULL-terminated from now on */
+    opt_name = opt->long_opt;
+
     const char *begin = NULL;
     size_t val_strlen = 0;
-    if (!(opt = Argparser_get_opt_ptr(parser, '\0', opt_name))) {
-        fprintf(stderr, "%s: unknown option '--%s'\n", parser->prog_name,
-                opt_name);
-        goto Argparser_recv_long_opt_fail;
-    }
-
     if (opt->type == ARG_BOOL) {
         if (has_equal_sign) {
             fprintf(stderr, "%s: option '--%s' does not take an argument\n",
                     parser->prog_name, opt_name);
-            goto Argparser_recv_long_opt_fail;
+            return 1;
         }
     } else {
         if (has_equal_sign) {
             /* Value is after the equal sign */
-            ++i;
-            val_strlen = strlen(argv[*argv_index]) - i;
-            begin = argv[*argv_index] + i;
+            ++opt_end_index;
+            val_strlen = strlen(argv[*argv_index]) - opt_end_index;
+            begin = argv[*argv_index] + opt_end_index;
         }
         /* Increment the index to look for the argument */
         else if (++(*argv_index) >= argc) {
             /* We're missing an argument */
             fprintf(stderr, "%s: missing argument for option '--%s'\n",
                     parser->prog_name, opt_name);
-            goto Argparser_recv_long_opt_fail;
+            return 1;
         } else {
             begin = argv[*argv_index];
             val_strlen = strlen(begin);
@@ -255,23 +262,13 @@ static int Argparser_recv_long_opt(Argparser *const parser, const int argc,
 
         /* Handle different argument types */
         if (Argparser_handle_opt(parser, opt, begin, val_strlen, 1))
-            goto Argparser_recv_long_opt_fail;
+            return 1;
     }
     opt->argv_index = *argv_index;
     opt->begin = begin;
     opt->val_strlen = val_strlen;
     ++opt->count;
-    free(opt_name);
     return 0;
-
-Argparser_recv_long_opt_fail_alloc:
-    fprintf(stderr, "%s: allocation failed in function %s, line %d of %s\n",
-            parser->prog_name, __func__, __LINE__, __FILE__);
-    goto Argparser_recv_long_opt_fail;
-
-Argparser_recv_long_opt_fail:
-    free(opt_name);
-    return 1;
 }
 
 int Argparser_parse(Argparser *const parser, const int argc,
