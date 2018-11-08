@@ -8,6 +8,7 @@
 ##############################################################################*/
 
 #include "argparse.h"
+#include <ctype.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -134,7 +135,8 @@ static int Argparser_handle_opt(Argparser *const parser, ArgparseOpt *const opt,
     switch (opt->type) {
     case ARG_INT:
         opt->int_val = strtoimax(val, &endptr, 10);
-        if (endptr == val || (size_t)(endptr - val) != val_strlen) {
+        if (isspace(val[0]) /* strtoimax discards leading whitespaces*/ ||
+            endptr == val || (size_t)(endptr - val) != val_strlen) {
             /* No conversion, or val is not consumed fully */
             fprintf(stderr,
                     "%s: argument '%s' for option '%s%s' is not a valid "
@@ -145,7 +147,8 @@ static int Argparser_handle_opt(Argparser *const parser, ArgparseOpt *const opt,
         return 0;
     case ARG_FLOAT:
         opt->float_val = strtod(val, &endptr);
-        if (endptr == val || (size_t)(endptr - val) != val_strlen) {
+        if (isspace(val[0]) /* strtod discards leading whitespaces*/ ||
+            endptr == val || (size_t)(endptr - val) != val_strlen) {
             /* No conversion, or val is not consumed fully */
             fprintf(stderr,
                     "%s: argument '%s' for option '%s%s' is not a valid "
